@@ -1,0 +1,2156 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NEON BASTION // Tactical Cyber Defense</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --neon-cyan: #00f3ff;
+            --neon-pink: #ff007f;
+            --neon-purple: #b537f2;
+            --neon-amber: #ffae00;
+            --neon-green: #00ff88;
+            --bg-dark: #070b14;
+        }
+        * {
+            user-select: none;
+            -webkit-user-select: none;
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-dark);
+            color: #e2e8f0;
+            font-family: 'Rajdhani', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+        /* Sci-fi UI Panels */
+        .cyber-panel {
+            background: rgba(11, 18, 33, 0.88);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 243, 255, 0.22);
+            box-shadow: 0 0 25px rgba(0, 243, 255, 0.08), inset 0 0 15px rgba(0, 243, 255, 0.04);
+        }
+        .cyber-btn {
+            position: relative;
+            transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+        .cyber-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 0 16px rgba(0, 243, 255, 0.35);
+        }
+        .cyber-btn:active:not(:disabled) {
+            transform: translateY(0px) scale(0.98);
+        }
+        .cyber-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+        .tower-card.selected {
+            border-color: var(--neon-cyan);
+            background: rgba(0, 243, 255, 0.14);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.3), inset 0 0 10px rgba(0, 243, 255, 0.2);
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #090d16;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00f3ff;
+        }
+        @keyframes pulseGlow {
+            0%, 100% { filter: drop-shadow(0 0 6px rgba(0, 243, 255, 0.7)); }
+            50% { filter: drop-shadow(0 0 14px rgba(0, 243, 255, 1)); }
+        }
+        .glow-text {
+            text-shadow: 0 0 10px rgba(0, 243, 255, 0.6);
+        }
+        .scanline {
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0, 243, 255, 0.03) 50%, rgba(0, 243, 255, 0.03));
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen w-screen overflow-hidden select-none">
+
+    <!-- Scanline subtle overlay -->
+    <div class="fixed inset-0 scanline z-40 pointer-events-none"></div>
+
+    <!-- TOP HUD BAR -->
+    <header class="cyber-panel z-20 px-3 py-2 flex flex-wrap items-center justify-between gap-2 border-b border-cyan-500/30 shrink-0">
+        <!-- Brand & Map Selector -->
+        <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2">
+                <div class="w-9 h-9 rounded-lg bg-cyan-500/20 border border-cyan-400 flex items-center justify-center shadow-[0_0_12px_rgba(0,243,255,0.4)]">
+                    <i class="fa-solid fa-shield-halved text-cyan-400 text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-orbitron font-black text-sm md:text-base tracking-wider text-white flex items-center gap-2">
+                        NEON BASTION <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">v2.4</span>
+                    </h1>
+                    <p id="sectorNameDisplay" class="text-xs text-cyan-400/80 font-semibold tracking-widest uppercase">SECTOR 01 // HELIOS CORE</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Core Telemetry Stats -->
+        <div class="flex items-center gap-2 sm:gap-4 bg-slate-950/80 px-3 py-1.5 rounded-xl border border-slate-800">
+            <!-- Core Integrity (Health) -->
+            <div class="flex items-center gap-2 pr-2 sm:pr-3 border-r border-slate-800" title="Core Integrity (Lives)">
+                <i class="fa-solid fa-heart-pulse text-rose-500 text-base sm:text-lg animate-pulse"></i>
+                <div>
+                    <div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold leading-none">Core HP</div>
+                    <div id="uiHealth" class="font-orbitron font-bold text-sm sm:text-base text-rose-400">20</div>
+                </div>
+            </div>
+
+            <!-- Credits (Gold) -->
+            <div class="flex items-center gap-2 pr-2 sm:pr-3 border-r border-slate-800" title="Cyber Credits">
+                <i class="fa-solid fa-coins text-amber-400 text-base sm:text-lg"></i>
+                <div>
+                    <div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold leading-none">Credits</div>
+                    <div id="uiGold" class="font-orbitron font-bold text-sm sm:text-base text-amber-300">350</div>
+                </div>
+            </div>
+
+            <!-- Wave Counter -->
+            <div class="flex items-center gap-2 pr-2 sm:pr-3 border-r border-slate-800" title="Current Wave">
+                <i class="fa-solid fa-wave-square text-cyan-400 text-base sm:text-lg"></i>
+                <div>
+                    <div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold leading-none">Wave</div>
+                    <div class="font-orbitron font-bold text-sm sm:text-base text-cyan-300">
+                        <span id="uiWave">1</span><span class="text-xs text-slate-500">/15</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Score -->
+            <div class="hidden md:flex items-center gap-2" title="Tactical Score">
+                <i class="fa-solid fa-trophy text-purple-400 text-base"></i>
+                <div>
+                    <div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold leading-none">Score</div>
+                    <div id="uiScore" class="font-orbitron font-bold text-sm sm:text-base text-purple-300">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls: Wave Launch, Speed, Audio, Help -->
+        <div class="flex items-center gap-1.5 sm:gap-2">
+            <button id="btnNextWave" onclick="game.TriggerNextWave()" class="cyber-btn px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-orbitron font-bold text-xs tracking-wider flex items-center gap-1.5 border border-emerald-400/50 shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+                <i class="fa-solid fa-play"></i> <span id="btnWaveText">SEND WAVE</span>
+            </button>
+
+            <div class="flex bg-slate-900 rounded-lg p-0.5 border border-slate-700">
+                <button id="btnPause" onclick="game.SetSpeed(0)" class="px-2.5 py-1 rounded-md text-xs font-orbitron font-bold text-slate-400 hover:text-white transition" title="Pause (Space)">
+                    <i class="fa-solid fa-pause"></i>
+                </button>
+                <button id="btnSpeed1" onclick="game.SetSpeed(1)" class="px-2.5 py-1 rounded-md text-xs font-orbitron font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 transition" title="Normal Speed">
+                    1x
+                </button>
+                <button id="btnSpeed2" onclick="game.SetSpeed(2)" class="px-2.5 py-1 rounded-md text-xs font-orbitron font-bold text-slate-400 hover:text-white transition" title="Fast Forward">
+                    2x
+                </button>
+                <button id="btnSpeed4" onclick="game.SetSpeed(4)" class="px-2.5 py-1 rounded-md text-xs font-orbitron font-bold text-slate-400 hover:text-white transition" title="Hyper Speed">
+                    4x
+                </button>
+            </div>
+
+            <button id="btnSound" onclick="sound.ToggleMute()" class="cyber-btn w-8 h-8 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center text-cyan-400 hover:border-cyan-400" title="Toggle Audio">
+                <i id="iconSound" class="fa-solid fa-volume-high text-xs"></i>
+            </button>
+
+            <button onclick="game.ToggleMenuModal()" class="cyber-btn w-8 h-8 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-300 hover:border-cyan-400" title="Tactical Guide & Restart">
+                <i class="fa-solid fa-bars text-xs"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN WORKSPACE: CANVAS + SIDE INSPECTOR -->
+    <div class="flex-1 flex flex-col lg:flex-row relative overflow-hidden">
+        
+        <!-- GAME CANVAS CONTAINER -->
+        <div id="canvasContainer" class="flex-1 relative bg-[#060911] overflow-hidden flex items-center justify-center">
+            <canvas id="gameCanvas" class="block cursor-crosshair"></canvas>
+
+            <!-- Floating Wave Incoming Banner -->
+            <div id="waveBanner" class="pointer-events-none absolute top-4 left-1/2 -translate-x-1/2 transition-all duration-500 opacity-0 -translate-y-4 z-10">
+                <div class="cyber-panel px-5 py-2 rounded-full border border-cyan-400/50 flex items-center gap-3 shadow-[0_0_25px_rgba(0,243,255,0.25)]">
+                    <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
+                    <span id="waveBannerText" class="font-orbitron font-bold text-xs sm:text-sm tracking-widest text-white">WAVE 1 INCOMING</span>
+                </div>
+            </div>
+
+            <!-- Active Tactical Abilities Bar (Floating Bottom-Left on Canvas) -->
+            <div class="absolute bottom-3 left-3 z-10 flex items-center gap-2">
+                <button id="abilityOrbital" onclick="game.ActivateAbility('orbital')" class="cyber-btn cyber-panel px-3 py-2 rounded-xl flex items-center gap-2.5 border border-rose-500/40 hover:border-rose-400 group">
+                    <div class="w-8 h-8 rounded-lg bg-rose-500/20 border border-rose-500/50 flex items-center justify-center text-rose-400 group-hover:scale-110 transition">
+                        <i class="fa-solid fa-satellite-dish"></i>
+                    </div>
+                    <div class="text-left">
+                        <div class="text-xs font-orbitron font-bold text-white flex items-center gap-1.5">
+                            PLASMA STRIKE <span class="text-[10px] text-amber-300 font-semibold">125c</span>
+                        </div>
+                        <div id="cdOrbital" class="text-[10px] text-emerald-400 font-semibold">READY // GLOBAL AoE</div>
+                    </div>
+                </button>
+
+                <button id="abilityOverclock" onclick="game.ActivateAbility('overclock')" class="cyber-btn cyber-panel px-3 py-2 rounded-xl flex items-center gap-2.5 border border-cyan-500/40 hover:border-cyan-400 group">
+                    <div class="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/50 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition">
+                        <i class="fa-solid fa-bolt"></i>
+                    </div>
+                    <div class="text-left">
+                        <div class="text-xs font-orbitron font-bold text-white flex items-center gap-1.5">
+                            OVERCLOCK <span class="text-[10px] text-amber-300 font-semibold">100c</span>
+                        </div>
+                        <div id="cdOverclock" class="text-[10px] text-emerald-400 font-semibold">READY // +60% FIRE RATE</div>
+                    </div>
+                </button>
+            </div>
+
+            <!-- Next Wave Enemy Intel Pill (Floating Top-Left on Canvas) -->
+            <div class="absolute top-3 left-3 z-10 hidden sm:flex items-center gap-2 cyber-panel px-3 py-1.5 rounded-xl border border-slate-700/80 text-xs">
+                <span class="text-slate-400 font-bold uppercase tracking-wider">Threat Intel:</span>
+                <div id="threatIntelIcons" class="flex items-center gap-2 text-slate-200 font-semibold">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT / BOTTOM CONTROL DECK (Tower Arsenal & Inspector) -->
+        <aside class="cyber-panel w-full lg:w-80 xl:w-96 border-t lg:border-t-0 lg:border-l border-cyan-500/30 flex flex-col justify-between shrink-0 z-20 max-h-[38vh] lg:max-h-none overflow-y-auto">
+            
+            <!-- SECTION 1: TOWER ARSENAL (BUILD MENU) -->
+            <div class="p-3 sm:p-4 border-b border-slate-800/90">
+                <div class="flex items-center justify-between mb-2.5">
+                    <h2 class="font-orbitron font-bold text-xs tracking-widest uppercase text-cyan-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-cubes-stacked"></i> Defense Matrix Arsenal
+                    </h2>
+                    <span class="text-[11px] text-slate-400">Keys <kbd class="px-1.5 py-0.5 bg-slate-800 rounded text-slate-300 border border-slate-700">1-4</kbd> / <kbd class="px-1.5 py-0.5 bg-slate-800 rounded text-slate-300 border border-slate-700">ESC</kbd></span>
+                </div>
+
+                <!-- 4 Tower Cards Grid -->
+                <div class="grid grid-cols-4 lg:grid-cols-2 gap-2" id="towerBuildGrid">
+                    <!-- Populated via JS -->
+                </div>
+            </div>
+
+            <!-- SECTION 2: TACTICAL INSPECTOR (SELECTED TOWER OR TURRET DETAILS) -->
+            <div class="p-3 sm:p-4 flex-1 flex flex-col justify-between bg-slate-950/40" id="inspectorPanel">
+                
+                <!-- Default State (No Placed Tower Selected) -->
+                <div id="inspectorEmpty" class="my-auto text-center py-4 px-2">
+                    <div class="w-12 h-12 rounded-full bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mx-auto mb-2 text-cyan-400">
+                        <i class="fa-solid fa-crosshairs text-xl"></i>
+                    </div>
+                    <h3 id="blueprintTitle" class="font-orbitron font-bold text-sm text-white mb-1">SELECT A TOWER OR NODE</h3>
+                    <p id="blueprintDesc" class="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
+                        Choose a defense turret above and click any illuminated tactical grid node on the map to deploy. Click an existing turret to upgrade or configure targeting.
+                    </p>
+                    <div id="blueprintStats" class="hidden mt-3 grid grid-cols-3 gap-1.5 text-center bg-slate-900/90 p-2 rounded-lg border border-slate-800">
+                        <div>
+                            <div class="text-[10px] text-slate-400 uppercase">Damage</div>
+                            <div id="bpDmg" class="font-orbitron font-bold text-xs text-cyan-300">--</div>
+                        </div>
+                        <div>
+                            <div class="text-[10px] text-slate-400 uppercase">Range</div>
+                            <div id="bpRng" class="font-orbitron font-bold text-xs text-emerald-300">--</div>
+                        </div>
+                        <div>
+                            <div class="text-[10px] text-slate-400 uppercase">Fire Rate</div>
+                            <div id="bpSpd" class="font-orbitron font-bold text-xs text-amber-300">--</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active Selected Turret Inspector -->
+                <div id="inspectorActive" class="hidden flex-col h-full justify-between space-y-3">
+                    <div>
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                            <div class="flex items-center gap-2.5">
+                                <div id="inspIconBox" class="w-9 h-9 rounded-lg flex items-center justify-center border text-base"></div>
+                                <div>
+                                    <div class="flex items-center gap-1.5">
+                                        <h3 id="inspName" class="font-orbitron font-bold text-sm text-white">PULSE LASER</h3>
+                                        <span id="inspLevelBadge" class="text-[10px] font-orbitron font-bold px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">LVL 1</span>
+                                    </div>
+                                    <p id="inspTotalKills" class="text-[11px] text-slate-400 font-semibold">Eliminations: 0 // Damage Dealt: 0</p>
+                                </div>
+                            </div>
+                            <button onclick="game.ClearSelection()" class="text-slate-400 hover:text-white p-1" title="Deselect (Esc)">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+
+                        <!-- Live Telemetry Metrics -->
+                        <div class="grid grid-cols-3 gap-2 my-2.5">
+                            <div class="bg-slate-900/90 p-2 rounded-lg border border-slate-800">
+                                <div class="text-[10px] text-slate-400 uppercase font-bold">Damage</div>
+                                <div class="font-orbitron font-bold text-xs sm:text-sm text-white">
+                                    <span id="inspDmg">25</span>
+                                    <span id="inspDmgNext" class="text-[10px] text-emerald-400 ml-0.5">+15</span>
+                                </div>
+                            </div>
+                            <div class="bg-slate-900/90 p-2 rounded-lg border border-slate-800">
+                                <div class="text-[10px] text-slate-400 uppercase font-bold">Range</div>
+                                <div class="font-orbitron font-bold text-xs sm:text-sm text-white">
+                                    <span id="inspRng">140</span>
+                                    <span id="inspRngNext" class="text-[10px] text-emerald-400 ml-0.5">+20</span>
+                                </div>
+                            </div>
+                            <div class="bg-slate-900/90 p-2 rounded-lg border border-slate-800">
+                                <div class="text-[10px] text-slate-400 uppercase font-bold">Rate/sec</div>
+                                <div class="font-orbitron font-bold text-xs sm:text-sm text-white">
+                                    <span id="inspRate">2.5s</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Targeting Priority Selector -->
+                        <div class="mb-2">
+                            <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Targeting AI Protocol</div>
+                            <div class="grid grid-cols-4 gap-1 bg-slate-900 p-1 rounded-lg border border-slate-800">
+                                <button onclick="game.SetTowerTargeting('first')" id="tgt_first" class="tgt-btn py-1 rounded text-[11px] font-bold transition">First</button>
+                                <button onclick="game.SetTowerTargeting('strongest')" id="tgt_strongest" class="tgt-btn py-1 rounded text-[11px] font-bold transition">Strong</button>
+                                <button onclick="game.SetTowerTargeting('weakest')" id="tgt_weakest" class="tgt-btn py-1 rounded text-[11px] font-bold transition">Weak</button>
+                                <button onclick="game.SetTowerTargeting('closest')" id="tgt_closest" class="tgt-btn py-1 rounded text-[11px] font-bold transition">Close</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Upgrade & Sell Buttons -->
+                    <div class="flex items-center gap-2 pt-1">
+                        <button id="btnUpgradeTower" onclick="game.UpgradeSelectedTower()" class="cyber-btn flex-1 py-2.5 px-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-orbitron font-bold text-xs flex items-center justify-between border border-cyan-400/50 shadow-[0_0_15px_rgba(0,243,255,0.2)]">
+                            <span class="flex items-center gap-1.5"><i class="fa-solid fa-circle-arrow-up"></i> <span id="upgradeLabel">UPGRADE MK.II</span></span>
+                            <span id="upgradeCostBadge" class="bg-slate-950/60 px-2 py-0.5 rounded text-amber-300">120c</span>
+                        </button>
+
+                        <button id="btnSellTower" onclick="game.SellSelectedTower()" class="cyber-btn py-2.5 px-3 rounded-xl bg-rose-950/70 hover:bg-rose-900/80 text-rose-300 border border-rose-500/40 font-orbitron font-bold text-xs flex items-center gap-1.5" title="Salvage Turret (75% Refund)">
+                            <i class="fa-solid fa-recycle"></i>
+                            <span id="sellValueBadge">+75c</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 3: QUICK TACTICAL FOOTER -->
+            <div class="hidden lg:flex px-4 py-2 bg-slate-950 border-t border-slate-800/80 items-center justify-between text-[11px] text-slate-400">
+                <span><i class="fa-solid fa-lightbulb text-amber-400 mr-1"></i> Earn +5% interest on unspent Credits each wave</span>
+            </div>
+        </aside>
+    </div>
+
+    <!-- START / MISSION SELECT / PAUSE MODAL OVERLAY -->
+    <div id="modalOverlay" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="cyber-panel max-w-2xl w-full rounded-2xl border border-cyan-400/40 p-6 sm:p-8 shadow-[0_0_50px_rgba(0,243,255,0.18)] relative overflow-hidden">
+            <!-- Decorative corner glow -->
+            <div class="absolute -top-20 -right-20 w-44 h-44 bg-cyan-500/20 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -bottom-20 -left-20 w-44 h-44 bg-purple-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-cyan-500/20 border border-cyan-400 flex items-center justify-center text-cyan-400 text-2xl shadow-[0_0_20px_rgba(0,243,255,0.4)]">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div>
+                        <h2 id="modalTitle" class="font-orbitron font-black text-xl sm:text-2xl text-white tracking-wider glow-text">NEON BASTION</h2>
+                        <p id="modalSubtitle" class="text-xs sm:text-sm text-cyan-400 font-semibold tracking-widest uppercase">TACTICAL CYBER DEFENSE SIMULATION</p>
+                    </div>
+                </div>
+                <button id="btnCloseModal" onclick="game.ResumeFromModal()" class="hidden text-slate-400 hover:text-white text-xl px-2">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- End Game Summary Box (Hidden initially) -->
+            <div id="endGameSummary" class="hidden mb-6 p-4 rounded-xl bg-slate-900/90 border border-slate-700 text-center">
+                <h3 id="endGameStatus" class="font-orbitron font-black text-2xl mb-1 text-emerald-400">SECTOR SECURED!</h3>
+                <p id="endGameReason" class="text-sm text-slate-300 mb-4">All hostile cybernetic waves were neutralized before breaching the Helios Core.</p>
+                <div class="grid grid-cols-3 gap-3 max-w-md mx-auto">
+                    <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                        <div class="text-[10px] text-slate-400 uppercase">Waves Cleared</div>
+                        <div id="sumWaves" class="font-orbitron font-bold text-lg text-cyan-400">15/15</div>
+                    </div>
+                    <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                        <div class="text-[10px] text-slate-400 uppercase">Hostiles Eliminated</div>
+                        <div id="sumKills" class="font-orbitron font-bold text-lg text-amber-400">240</div>
+                    </div>
+                    <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                        <div class="text-[10px] text-slate-400 uppercase">Final Score</div>
+                        <div id="sumScore" class="font-orbitron font-bold text-lg text-purple-400">14,500</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sector / Map Selector -->
+            <div class="mb-6">
+                <label class="block font-orbitron font-bold text-xs uppercase tracking-wider text-slate-300 mb-2.5">
+                    <i class="fa-solid fa-map-location-dot text-cyan-400 mr-1"></i> Select Defense Sector Layout
+                </label>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <button onclick="game.SelectMap(0)" id="mapCard_0" class="map-card p-3 rounded-xl border border-cyan-400 bg-cyan-500/15 text-left transition">
+                        <div class="font-orbitron font-bold text-xs text-white flex items-center justify-between">
+                            <span>01 // HELIOS CORE</span>
+                            <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">STANDARD</span>
+                        </div>
+                        <p class="text-[11px] text-slate-300 mt-1">Classic S-bend circuit with high-visibility crossfire zones.</p>
+                    </button>
+                    <button onclick="game.SelectMap(1)" id="mapCard_1" class="map-card p-3 rounded-xl border border-slate-700 bg-slate-900/60 hover:border-slate-500 text-left transition">
+                        <div class="font-orbitron font-bold text-xs text-white flex items-center justify-between">
+                            <span>02 // NEXUS SPIRAL</span>
+                            <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">TACTICAL</span>
+                        </div>
+                        <p class="text-[11px] text-slate-300 mt-1">Deep central citadel loop ideal for Cryo & Railgun synergy.</p>
+                    </button>
+                    <button onclick="game.SelectMap(2)" id="mapCard_2" class="map-card p-3 rounded-xl border border-slate-700 bg-slate-900/60 hover:border-slate-500 text-left transition">
+                        <div class="font-orbitron font-bold text-xs text-white flex items-center justify-between">
+                            <span>03 // OMEGA BLITZ</span>
+                            <span class="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300">EXPERT</span>
+                        </div>
+                        <p class="text-[11px] text-slate-300 mt-1">Rapid assault corridor demanding heavy AoE and precision timing.</p>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tactical Guide Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6 text-xs">
+                <div class="p-3 rounded-xl bg-slate-900/70 border border-slate-800">
+                    <div class="font-orbitron font-bold text-cyan-400 mb-1.5 flex items-center gap-1.5">
+                        <i class="fa-solid fa-tower-observation"></i> TURRET ARCHETYPES
+                    </div>
+                    <ul class="space-y-1 text-slate-300">
+                        <li><strong class="text-cyan-300">Pulse Laser:</strong> Rapid continuous energy beam.</li>
+                        <li><strong class="text-amber-300">Plasma Cannon:</strong> Heavy splash AoE ordinance.</li>
+                        <li><strong class="text-sky-300">Cryo Emitter:</strong> Slows & chills all nearby hostiles.</li>
+                        <li><strong class="text-purple-300">Quantum Sniper:</strong> Long-range armor-piercing railgun.</li>
+                    </ul>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-900/70 border border-slate-800">
+                    <div class="font-orbitron font-bold text-rose-400 mb-1.5 flex items-center gap-1.5">
+                        <i class="fa-solid fa-bug"></i> HOSTILE THREAT CLASSES
+                    </div>
+                    <ul class="space-y-1 text-slate-300">
+                        <li><strong class="text-emerald-300">Swarm & Scout:</strong> Fast, low-armor cyber runners.</li>
+                        <li><strong class="text-amber-300">Aegis Tank:</strong> High armor; weak to Sniper & Plasma.</li>
+                        <li><strong class="text-teal-300">Nano-Mender:</strong> Periodically heals nearby allies.</li>
+                        <li><strong class="text-rose-400">Dreadnought Boss:</strong> Massive hull + shield generator.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center justify-end gap-3">
+                <button id="btnResumeModal" onclick="game.ResumeFromModal()" class="hidden cyber-btn px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-orbitron font-bold text-xs tracking-wider">
+                    RESUME MISSION
+                </button>
+                <button onclick="game.StartNewGame()" class="cyber-btn w-full sm:w-auto px-7 py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-orbitron font-black text-sm tracking-wider flex items-center justify-center gap-2 shadow-[0_0_25px_rgba(0,243,255,0.4)]">
+                    <i class="fa-solid fa-power-off"></i> INITIALIZE DEFENSE MATRIX
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * ============================================================================
+         * PROCEDURAL WEB AUDIO SYNTHESIZER (Zero External Assets Required)
+         * ============================================================================
+         */
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+
+            Init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.ctx = new AudioCtx();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            ToggleMute() {
+                this.muted = !this.muted;
+                const icon = document.getElementById('iconSound');
+                icon.className = this.muted ? 'fa-solid fa-volume-xmark text-xs text-rose-400' : 'fa-solid fa-volume-high text-xs text-cyan-400';
+            }
+
+            Play(type) {
+                if (this.muted) return;
+                this.Init();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                switch (type) {
+                    case 'laser':
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(720, now);
+                        osc.frequency.exponentialRampToValueAtTime(180, now + 0.09);
+                        gain.gain.setValueAtTime(0.06, now);
+                        gain.gain.linearRampToValueAtTime(0.001, now + 0.09);
+                        osc.start(now);
+                        osc.stop(now + 0.09);
+                        break;
+
+                    case 'cannon':
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(160, now);
+                        osc.frequency.exponentialRampToValueAtTime(38, now + 0.24);
+                        gain.gain.setValueAtTime(0.16, now);
+                        gain.gain.linearRampToValueAtTime(0.001, now + 0.24);
+                        osc.start(now);
+                        osc.stop(now + 0.24);
+                        break;
+
+                    case 'frost':
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(980, now);
+                        osc.frequency.exponentialRampToValueAtTime(1450, now + 0.15);
+                        gain.gain.setValueAtTime(0.05, now);
+                        gain.gain.linearRampToValueAtTime(0.001, now + 0.15);
+                        osc.start(now);
+                        osc.stop(now + 0.15);
+                        break;
+
+                    case 'sniper':
+                        osc.type = 'square';
+                        osc.frequency.setValueAtTime(920, now);
+                        osc.frequency.exponentialRampToValueAtTime(95, now + 0.28);
+                        gain.gain.setValueAtTime(0.12, now);
+                        gain.gain.linearRampToValueAtTime(0.001, now + 0.28);
+                        osc.start(now);
+                        osc.stop(now + 0.28);
+                        break;
+
+                    case 'build':
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(320, now);
+                        osc.frequency.exponentialRampToValueAtTime(640, now + 0.14);
+                        gain.gain.setValueAtTime(0.1, now);
+                        gain.gain.linearRampToValueAtTime(0.001, now + 0.14);
+                        osc.start(now);
+                        osc.stop(now + 0.14);
+                        break;
+
+                    case 'upgrade':
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(440, now);
+                        osc.frequency.setValueAtTime(554, now + 0.07);
+                        osc.frequency.setValueAtTime(659, now + 0.14);
+                        gain.gain.setValueAtTime(0.12, now);
+                        gain.gain.linearRampToValueAtTime(0.001, now + 0.26);
+                        osc.start(now);
+                        osc.stop(now + 0.26);
+                        break;
+
+                    case 'sell':
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(580, now);
+                        osc.frequency.exponentialRampToValueAtTime(260, now + 0.16);
+                        gain.gain.setValueAtTime(0.1, now);
+                        gain.gain.linearRampToValueAtTime(0.001, now + 0.16);
+                        osc.start(now);
+                        osc.stop(now + 0.16);
+                        break;
+
+                    case 'hit':
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(130, now);
+                        osc.frequency.linearRampToValueAtTime(55, now + 0.18);
+                        gain.gain.setValueAtTime(0.15, now);
+                        gain.gain.linearRampToValueAtTime(0.001, now + 0.18);
+                        osc.start(now);
+                        osc.stop(now + 0.18);
+                        break;
+
+                    case 'orbital':
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(420, now);
+                        osc.frequency.exponentialRampToValueAtTime(35, now + 0.65);
+                        gain.gain.setValueAtTime(0.22, now);
+                        gain.gain.linearRampToValueAtTime(0.001, now + 0.65);
+                        osc.start(now);
+                        osc.stop(now + 0.65);
+                        break;
+                }
+            }
+        }
+
+        const sound = new SoundEngine();
+
+        /**
+         * ============================================================================
+         * GAME CONFIGURATION: MAPS, TOWERS, AND ENEMY ARCHETYPES
+         * ============================================================================
+         */
+        const GRID_COLS = 16;
+        const GRID_ROWS = 10;
+
+        const MAPS = [
+            {
+                name: "SECTOR 01 // HELIOS CORE",
+                waypoints: [
+                    { c: 0, r: 2 }, { c: 4, r: 2 }, { c: 4, r: 7 },
+                    { c: 8, r: 7 }, { c: 8, r: 2 }, { c: 12, r: 2 },
+                    { c: 12, r: 7 }, { c: 15, r: 7 }
+                ]
+            },
+            {
+                name: "SECTOR 02 // NEXUS SPIRAL",
+                waypoints: [
+                    { c: 0, r: 1 }, { c: 13, r: 1 }, { c: 13, r: 8 },
+                    { c: 2, r: 8 }, { c: 2, r: 4 }, { c: 10, r: 4 },
+                    { c: 10, r: 6 }, { c: 15, r: 6 }
+                ]
+            },
+            {
+                name: "SECTOR 03 // OMEGA BLITZ",
+                waypoints: [
+                    { c: 0, r: 5 }, { c: 3, r: 5 }, { c: 3, r: 1 },
+                    { c: 7, r: 1 }, { c: 7, r: 8 }, { c: 11, r: 8 },
+                    { c: 11, r: 4 }, { c: 15, r: 4 }
+                ]
+            }
+        ];
+
+        const TOWER_SPECS = {
+            laser: {
+                id: 'laser',
+                name: 'Pulse Laser',
+                shortName: 'LASER',
+                cost: 100,
+                color: '#00f3ff',
+                icon: 'fa-bolt-lightning',
+                damage: 24,
+                range: 2.8, // in grid cells
+                fireRate: 2.8, // shots per second
+                desc: 'High-frequency directed energy turret. Melts single targets and strips energy shields rapidly.',
+                sound: 'laser'
+            },
+            cannon: {
+                id: 'cannon',
+                name: 'Plasma Mortar',
+                shortName: 'PLASMA',
+                cost: 150,
+                color: '#ffae00',
+                icon: 'fa-bomb',
+                damage: 52,
+                range: 2.5,
+                fireRate: 0.85,
+                splashRadius: 1.35, // in grid cells
+                desc: 'Launches volatile plasma shells that detonate on impact, dealing heavy splash damage to clustered waves.',
+                sound: 'cannon'
+            },
+            frost: {
+                id: 'frost',
+                name: 'Cryo Emitter',
+                shortName: 'CRYO',
+                cost: 125,
+                color: '#38bdf8',
+                icon: 'fa-snowflake',
+                damage: 14,
+                range: 2.3,
+                fireRate: 1.2,
+                slowFactor: 0.45, // reduces speed by 45%
+                slowDuration: 2.6,
+                desc: 'Releases sub-zero shockwaves that damage and slow all hostiles within its radius simultaneously.',
+                sound: 'frost'
+            },
+            sniper: {
+                id: 'sniper',
+                name: 'Quantum Railgun',
+                shortName: 'RAILGUN',
+                cost: 200,
+                color: '#c084fc',
+                icon: 'fa-crosshairs',
+                damage: 145,
+                range: 5.2,
+                fireRate: 0.48,
+                armorPen: true,
+                desc: 'Extreme-range magnetic railgun. Bypasses heavy armor plating and deals massive critical strikes.',
+                sound: 'sniper'
+            }
+        };
+
+        const ENEMY_TYPES = {
+            scout: {
+                name: 'Cyber Scout',
+                hp: 65,
+                speed: 2.1, // cells per sec
+                reward: 14,
+                score: 25,
+                color: '#00ff88',
+                radius: 0.24,
+                shape: 'triangle',
+                armor: 0
+            },
+            grunt: {
+                name: 'Vanguard Drone',
+                hp: 135,
+                speed: 1.35,
+                reward: 20,
+                score: 40,
+                color: '#00f3ff',
+                radius: 0.28,
+                shape: 'diamond',
+                armor: 0.1
+            },
+            swarm: {
+                name: 'Nano Swarm',
+                hp: 42,
+                speed: 2.65,
+                reward: 9,
+                score: 15,
+                color: '#f43f5e',
+                radius: 0.19,
+                shape: 'circle',
+                armor: 0
+            },
+            tank: {
+                name: 'Aegis Goliath',
+                hp: 420,
+                speed: 0.78,
+                reward: 42,
+                score: 90,
+                color: '#ffae00',
+                radius: 0.36,
+                shape: 'hexagon',
+                armor: 0.35 // 35% damage reduction vs non-armor-piercing
+            },
+            healer: {
+                name: 'Nano-Mender',
+                hp: 190,
+                speed: 1.15,
+                reward: 32,
+                score: 70,
+                color: '#2dd4bf',
+                radius: 0.29,
+                shape: 'cross',
+                armor: 0.1,
+                heals: true
+            },
+            boss: {
+                name: 'Omega Dreadnought',
+                hp: 2100,
+                speed: 0.55,
+                reward: 180,
+                score: 500,
+                color: '#d946ef',
+                radius: 0.44,
+                shape: 'octagon',
+                armor: 0.3,
+                boss: true
+            }
+        };
+
+        /**
+         * ============================================================================
+         * MAIN GAME ENGINE CLASS
+         * ============================================================================
+         */
+        class TowerDefenseGame {
+            constructor() {
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.container = document.getElementById('canvasContainer');
+
+                this.mapIndex = 0;
+                this.cellSize = 60;
+                this.offsetX = 0;
+                this.offsetY = 0;
+
+                // Game State
+                this.health = 20;
+                this.gold = 350;
+                this.score = 0;
+                this.wave = 0;
+                this.maxWaves = 15;
+                this.speed = 1;
+                this.lastSpeed = 1;
+                this.gameOver = false;
+                this.waveActive = false;
+
+                // Entities
+                this.grid = [];
+                this.pathCells = [];
+                this.waypointsPx = [];
+                this.towers = [];
+                this.enemies = [];
+                this.projectiles = [];
+                this.particles = [];
+                this.floatingTexts = [];
+                this.laserBeams = [];
+                this.shockwaves = [];
+
+                // Spawning Queue
+                this.spawnQueue = [];
+                this.spawnTimer = 0;
+                this.totalKills = 0;
+
+                // Abilities
+                this.abilities = {
+                    orbital: { cost: 125, cooldown: 20, timer: 0 },
+                    overclock: { cost: 100, cooldown: 25, timer: 0, activeTimer: 0 }
+                };
+
+                // Interaction State
+                this.selectedBuildType = 'laser';
+                this.selectedTower = null;
+                this.hoverCell = { c: -1, r: -1 };
+
+                this.InitUI();
+                this.BindEvents();
+                this.ResizeCanvas();
+                this.LoadMap(0);
+
+                // Animation Loop
+                this.lastTime = performance.now();
+                requestAnimationFrame((t) => this.Loop(t));
+            }
+
+            InitUI() {
+                const gridEl = document.getElementById('towerBuildGrid');
+                gridEl.innerHTML = '';
+
+                Object.values(TOWER_SPECS).forEach((spec, idx) => {
+                    const btn = document.createElement('button');
+                    btn.id = `buildCard_${spec.id}`;
+                    btn.className = `tower-card cyber-btn p-2.5 rounded-xl border border-slate-700/80 bg-slate-900/70 flex flex-col justify-between text-left transition`;
+                    btn.onclick = () => this.SelectBuildType(spec.id);
+
+                    btn.innerHTML = `
+                        <div class="flex items-center justify-between w-full mb-1.5">
+                            <div class="w-7 h-7 rounded-lg flex items-center justify-center border" style="background:${spec.color}20; border-color:${spec.color}; color:${spec.color}">
+                                <i class="fa-solid ${spec.icon} text-xs"></i>
+                            </div>
+                            <span class="font-orbitron font-bold text-xs text-amber-300">${spec.cost}c</span>
+                        </div>
+                        <div>
+                            <div class="font-orbitron font-bold text-[11px] text-white truncate">${spec.name}</div>
+                            <div class="text-[10px] text-slate-400 hidden sm:block">Key [${idx + 1}]</div>
+                        </div>
+                    `;
+                    gridEl.appendChild(btn);
+                });
+
+                this.SelectBuildType('laser');
+            }
+
+            BindEvents() {
+                window.addEventListener('resize', () => this.ResizeCanvas());
+
+                // Pointer Move
+                this.canvas.addEventListener('mousemove', (e) => {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left - this.offsetX;
+                    const y = e.clientY - rect.top - this.offsetY;
+                    const c = Math.floor(x / this.cellSize);
+                    const r = Math.floor(y / this.cellSize);
+                    if (c >= 0 && c < GRID_COLS && r >= 0 && r < GRID_ROWS) {
+                        this.hoverCell = { c, r };
+                    } else {
+                        this.hoverCell = { c: -1, r: -1 };
+                    }
+                });
+
+                this.canvas.addEventListener('mouseleave', () => {
+                    this.hoverCell = { c: -1, r: -1 };
+                });
+
+                // Click / Touch to Build or Select Tower
+                this.canvas.addEventListener('click', (e) => {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left - this.offsetX;
+                    const y = e.clientY - rect.top - this.offsetY;
+                    const c = Math.floor(x / this.cellSize);
+                    const r = Math.floor(y / this.cellSize);
+                    this.HandleCellTap(c, r);
+                });
+
+                // Keyboard Shortcuts
+                window.addEventListener('keydown', (e) => {
+                    if (e.key === '1') this.SelectBuildType('laser');
+                    if (e.key === '2') this.SelectBuildType('cannon');
+                    if (e.key === '3') this.SelectBuildType('frost');
+                    if (e.key === '4') this.SelectBuildType('sniper');
+                    if (e.key === 'Escape') this.ClearSelection();
+                    if (e.key === ' ') {
+                        e.preventDefault();
+                        this.SetSpeed(this.speed === 0 ? this.lastSpeed || 1 : 0);
+                    }
+                });
+            }
+
+            ResizeCanvas() {
+                const w = this.container.clientWidth;
+                const h = this.container.clientHeight;
+                this.canvas.width = w;
+                this.canvas.height = h;
+
+                const pad = 20;
+                const cellW = (w - pad * 2) / GRID_COLS;
+                const cellH = (h - pad * 2) / GRID_ROWS;
+                this.cellSize = Math.max(28, Math.floor(Math.min(cellW, cellH)));
+
+                this.offsetX = Math.floor((w - this.cellSize * GRID_COLS) / 2);
+                this.offsetY = Math.floor((h - this.cellSize * GRID_ROWS) / 2);
+            }
+
+            CellCenter(c, r) {
+                return {
+                    x: this.offsetX + (c + 0.5) * this.cellSize,
+                    y: this.offsetY + (r + 0.5) * this.cellSize
+                };
+            }
+
+            SelectMap(idx) {
+                this.mapIndex = idx;
+                for (let i = 0; i < 3; i++) {
+                    const card = document.getElementById(`mapCard_${i}`);
+                    if (i === idx) {
+                        card.className = "map-card p-3 rounded-xl border border-cyan-400 bg-cyan-500/15 text-left transition";
+                    } else {
+                        card.className = "map-card p-3 rounded-xl border border-slate-700 bg-slate-900/60 hover:border-slate-500 text-left transition";
+                    }
+                }
+            }
+
+            LoadMap(idx) {
+                this.mapIndex = idx;
+                const map = MAPS[idx];
+                document.getElementById('sectorNameDisplay').textContent = map.name;
+
+                // Initialize empty grid: 0 = Buildable, 1 = Path, 2 = Tower
+                this.grid = Array.from({ length: GRID_ROWS }, () => Array(GRID_COLS).fill(0));
+                this.pathCells = [];
+
+                const wps = map.waypoints;
+                for (let i = 0; i < wps.length - 1; i++) {
+                    let c = wps[i].c;
+                    let r = wps[i].r;
+                    const targetC = wps[i + 1].c;
+                    const targetR = wps[i + 1].r;
+
+                    this.grid[r][c] = 1;
+                    this.pathCells.push({ c, r });
+
+                    while (c !== targetC || r !== targetR) {
+                        if (c < targetC) c++;
+                        else if (c > targetC) c--;
+                        else if (r < targetR) r++;
+                        else if (r > targetR) r--;
+                        this.grid[r][c] = 1;
+                        this.pathCells.push({ c, r });
+                    }
+                }
+            }
+
+            StartNewGame() {
+                sound.Init();
+                sound.Play('upgrade');
+                this.LoadMap(this.mapIndex);
+
+                this.health = 20;
+                this.gold = 350;
+                this.score = 0;
+                this.wave = 0;
+                this.totalKills = 0;
+                this.gameOver = false;
+                this.waveActive = false;
+
+                this.towers = [];
+                this.enemies = [];
+                this.projectiles = [];
+                this.particles = [];
+                this.floatingTexts = [];
+                this.laserBeams = [];
+                this.shockwaves = [];
+                this.spawnQueue = [];
+
+                this.abilities.orbital.timer = 0;
+                this.abilities.overclock.timer = 0;
+                this.abilities.overclock.activeTimer = 0;
+
+                this.ClearSelection();
+                this.SelectBuildType('laser');
+                this.SetSpeed(1);
+                this.UpdateHUD();
+                this.UpdateThreatIntel(1);
+
+                document.getElementById('modalOverlay').classList.add('hidden');
+                document.getElementById('endGameSummary').classList.add('hidden');
+            }
+
+            ToggleMenuModal() {
+                const modal = document.getElementById('modalOverlay');
+                if (modal.classList.contains('hidden')) {
+                    this.lastSpeed = this.speed || 1;
+                    this.SetSpeed(0);
+                    document.getElementById('btnCloseModal').classList.remove('hidden');
+                    document.getElementById('btnResumeModal').classList.remove('hidden');
+                    document.getElementById('endGameSummary').classList.add('hidden');
+                    modal.classList.remove('hidden');
+                } else {
+                    this.ResumeFromModal();
+                }
+            }
+
+            ResumeFromModal() {
+                if (this.gameOver) return;
+                document.getElementById('modalOverlay').classList.add('hidden');
+                this.SetSpeed(this.lastSpeed || 1);
+            }
+
+            TriggerEndGame(victory) {
+                this.gameOver = true;
+                this.SetSpeed(0);
+
+                const summary = document.getElementById('endGameSummary');
+                const status = document.getElementById('endGameStatus');
+                const reason = document.getElementById('endGameReason');
+
+                summary.classList.remove('hidden');
+                document.getElementById('btnCloseModal').classList.add('hidden');
+                document.getElementById('btnResumeModal').classList.add('hidden');
+
+                if (victory) {
+                    status.textContent = "SECTOR SECURED // VICTORY!";
+                    status.className = "font-orbitron font-black text-2xl mb-1 text-emerald-400";
+                    reason.textContent = "All 15 hostile cybernetic assault waves were eradicated!";
+                    sound.Play('upgrade');
+                } else {
+                    status.textContent = "CORE BREACHED // DEFEAT";
+                    status.className = "font-orbitron font-black text-2xl mb-1 text-rose-500";
+                    reason.textContent = "Hostile forces overwhelmed the Helios Core defenses.";
+                    sound.Play('hit');
+                }
+
+                document.getElementById('sumWaves').textContent = `${victory ? this.maxWaves : Math.max(0, this.wave - 1)}/${this.maxWaves}`;
+                document.getElementById('sumKills').textContent = this.totalKills;
+                document.getElementById('sumScore').textContent = this.score.toLocaleString();
+
+                document.getElementById('modalOverlay').classList.remove('hidden');
+            }
+
+            SetSpeed(s) {
+                if (this.speed > 0 && s === 0) this.lastSpeed = this.speed;
+                this.speed = s;
+
+                const ids = { 0: 'btnPause', 1: 'btnSpeed1', 2: 'btnSpeed2', 4: 'btnSpeed4' };
+                Object.entries(ids).forEach(([spd, id]) => {
+                    const btn = document.getElementById(id);
+                    if (Number(spd) === s) {
+                        btn.className = "px-2.5 py-1 rounded-md text-xs font-orbitron font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 transition";
+                    } else {
+                        btn.className = "px-2.5 py-1 rounded-md text-xs font-orbitron font-bold text-slate-400 hover:text-white transition";
+                    }
+                });
+            }
+
+            SelectBuildType(typeId) {
+                this.selectedBuildType = typeId;
+                this.selectedTower = null;
+
+                Object.keys(TOWER_SPECS).forEach(id => {
+                    const card = document.getElementById(`buildCard_${id}`);
+                    if (card) card.classList.toggle('selected', id === typeId);
+                });
+
+                this.UpdateInspectorUI();
+            }
+
+            ClearSelection() {
+                this.selectedTower = null;
+                this.selectedBuildType = null;
+                Object.keys(TOWER_SPECS).forEach(id => {
+                    const card = document.getElementById(`buildCard_${id}`);
+                    if (card) card.classList.remove('selected');
+                });
+                this.UpdateInspectorUI();
+            }
+
+            HandleCellTap(c, r) {
+                if (c < 0 || c >= GRID_COLS || r < 0 || r >= GRID_ROWS) return;
+
+                // Check if clicking an existing tower
+                const existing = this.towers.find(t => t.c === c && t.r === r);
+                if (existing) {
+                    this.selectedTower = existing;
+                    this.selectedBuildType = null;
+                    Object.keys(TOWER_SPECS).forEach(id => {
+                        document.getElementById(`buildCard_${id}`)?.classList.remove('selected');
+                    });
+                    this.UpdateInspectorUI();
+                    return;
+                }
+
+                // Attempt to build if a blueprint is selected and cell is empty
+                if (this.selectedBuildType && this.grid[r][c] === 0) {
+                    const spec = TOWER_SPECS[this.selectedBuildType];
+                    if (this.gold >= spec.cost) {
+                        this.gold -= spec.cost;
+                        this.grid[r][c] = 2;
+
+                        const newTower = {
+                            c, r,
+                            type: spec.id,
+                            spec: spec,
+                            level: 1,
+                            totalInvested: spec.cost,
+                            damage: spec.damage,
+                            range: spec.range,
+                            fireRate: spec.fireRate,
+                            cooldown: 0,
+                            angle: 0,
+                            targeting: 'first',
+                            kills: 0,
+                            damageDealt: 0,
+                            pulseAnim: 0
+                        };
+
+                        this.towers.push(newTower);
+                        this.selectedTower = newTower;
+                        sound.Play('build');
+
+                        const pos = this.CellCenter(c, r);
+                        this.SpawnParticles(pos.x, pos.y, spec.color, 14);
+                        this.UpdateHUD();
+                        this.UpdateInspectorUI();
+                    } else {
+                        const pos = this.CellCenter(c, r);
+                        this.AddFloatingText(pos.x, pos.y, "INSUFFICIENT CREDITS", "#f43f5e");
+                        sound.Play('hit');
+                    }
+                }
+            }
+
+            SetTowerTargeting(mode) {
+                if (!this.selectedTower) return;
+                this.selectedTower.targeting = mode;
+                this.UpdateInspectorUI();
+            }
+
+            GetUpgradeCost(tower) {
+                return Math.round(tower.spec.cost * (tower.level === 1 ? 0.85 : 1.45));
+            }
+
+            UpgradeSelectedTower() {
+                const t = this.selectedTower;
+                if (!t || t.level >= 3) return;
+
+                const cost = this.GetUpgradeCost(t);
+                if (this.gold < cost) {
+                    const pos = this.CellCenter(t.c, t.r);
+                    this.AddFloatingText(pos.x, pos.y, "NEED MORE CREDITS", "#f43f5e");
+                    return;
+                }
+
+                this.gold -= cost;
+                t.totalInvested += cost;
+                t.level++;
+                t.damage = Math.round(t.damage * 1.48);
+                t.range = +(t.range * 1.14).toFixed(2);
+                t.fireRate = +(t.fireRate * 1.18).toFixed(2);
+
+                sound.Play('upgrade');
+                const pos = this.CellCenter(t.c, t.r);
+                this.SpawnParticles(pos.x, pos.y, t.spec.color, 22);
+                this.AddFloatingText(pos.x, pos.y - 10, `UPGRADED MK.${t.level === 2 ? 'II' : 'III'}`, t.spec.color);
+
+                this.UpdateHUD();
+                this.UpdateInspectorUI();
+            }
+
+            SellSelectedTower() {
+                const t = this.selectedTower;
+                if (!t) return;
+
+                const refund = Math.round(t.totalInvested * 0.75);
+                this.gold += refund;
+                this.grid[t.r][t.c] = 0;
+                this.towers = this.towers.filter(item => item !== t);
+
+                const pos = this.CellCenter(t.c, t.r);
+                this.SpawnParticles(pos.x, pos.y, '#ffae00', 16);
+                this.AddFloatingText(pos.x, pos.y, `+${refund}c SALVAGED`, '#ffae00');
+                sound.Play('sell');
+
+                this.selectedTower = null;
+                this.UpdateHUD();
+                this.UpdateInspectorUI();
+            }
+
+            UpdateInspectorUI() {
+                const emptyBox = document.getElementById('inspectorEmpty');
+                const activeBox = document.getElementById('inspectorActive');
+
+                if (!this.selectedTower) {
+                    emptyBox.classList.remove('hidden');
+                    activeBox.classList.add('hidden');
+                    activeBox.classList.remove('flex');
+
+                    const bpStats = document.getElementById('blueprintStats');
+                    if (this.selectedBuildType) {
+                        const spec = TOWER_SPECS[this.selectedBuildType];
+                        document.getElementById('blueprintTitle').textContent = `${spec.name.toUpperCase()} (${spec.cost}c)`;
+                        document.getElementById('blueprintDesc').textContent = spec.desc;
+                        bpStats.classList.remove('hidden');
+                        document.getElementById('bpDmg').textContent = spec.damage;
+                        document.getElementById('bpRng').textContent = `${spec.range} cells`;
+                        document.getElementById('bpSpd').textContent = `${spec.fireRate}/s`;
+                    } else {
+                        document.getElementById('blueprintTitle').textContent = "SELECT A TOWER OR NODE";
+                        document.getElementById('blueprintDesc').textContent = "Choose a defense turret above and click any tactical grid node on the map to deploy.";
+                        bpStats.classList.add('hidden');
+                    }
+                    return;
+                }
+
+                // Show Active Placed Tower Inspector
+                emptyBox.classList.add('hidden');
+                activeBox.classList.remove('hidden');
+                activeBox.classList.add('flex');
+
+                const t = this.selectedTower;
+                const iconBox = document.getElementById('inspIconBox');
+                iconBox.style.backgroundColor = `${t.spec.color}20`;
+                iconBox.style.borderColor = t.spec.color;
+                iconBox.style.color = t.spec.color;
+                iconBox.innerHTML = `<i class="fa-solid ${t.spec.icon}"></i>`;
+
+                document.getElementById('inspName').textContent = t.spec.name.toUpperCase();
+                document.getElementById('inspLevelBadge').textContent = `MK.${t.level === 1 ? 'I' : t.level === 2 ? 'II' : 'III'}`;
+                document.getElementById('inspTotalKills').textContent = `Eliminations: ${t.kills} // Damage: ${Math.round(t.damageDealt).toLocaleString()}`;
+
+                document.getElementById('inspDmg').textContent = t.damage;
+                document.getElementById('inspRng').textContent = t.range;
+                document.getElementById('inspRate').textContent = `${t.fireRate}/s`;
+
+                if (t.level < 3) {
+                    document.getElementById('inspDmgNext').textContent = `+${Math.round(t.damage * 0.48)}`;
+                    document.getElementById('inspRngNext').textContent = `+${(t.range * 0.14).toFixed(1)}`;
+                } else {
+                    document.getElementById('inspDmgNext').textContent = 'MAX';
+                    document.getElementById('inspRngNext').textContent = '';
+                }
+
+                // Targeting buttons
+                ['first', 'strongest', 'weakest', 'closest'].forEach(mode => {
+                    const btn = document.getElementById(`tgt_${mode}`);
+                    if (t.targeting === mode) {
+                        btn.className = "tgt-btn py-1 rounded text-[11px] font-bold bg-cyan-500/25 text-cyan-300 border border-cyan-500/40 transition";
+                    } else {
+                        btn.className = "tgt-btn py-1 rounded text-[11px] font-bold text-slate-400 hover:text-white transition";
+                    }
+                });
+
+                const btnUp = document.getElementById('btnUpgradeTower');
+                const upCost = this.GetUpgradeCost(t);
+                if (t.level >= 3) {
+                    btnUp.disabled = true;
+                    document.getElementById('upgradeLabel').textContent = "MAX LEVEL MK.III";
+                    document.getElementById('upgradeCostBadge').textContent = "--";
+                } else {
+                    btnUp.disabled = this.gold < upCost;
+                    document.getElementById('upgradeLabel').textContent = `UPGRADE MK.${t.level === 1 ? 'II' : 'III'}`;
+                    document.getElementById('upgradeCostBadge').textContent = `${upCost}c`;
+                }
+
+                const refund = Math.round(t.totalInvested * 0.75);
+                document.getElementById('sellValueBadge').textContent = `+${refund}c`;
+            }
+
+            /**
+             * ============================================================================
+             * WAVE GENERATION & ACTIVE ABILITIES
+             * ============================================================================
+             */
+            BuildWaveDefinition(waveNum) {
+                const scale = Math.pow(1.22, waveNum - 1);
+                const queue = [];
+
+                const pushGroup = (typeKey, count, delay) => {
+                    for (let i = 0; i < count; i++) {
+                        queue.push({ typeKey, scale, delay });
+                    }
+                };
+
+                if (waveNum === 1) {
+                    pushGroup('grunt', 6, 1.1);
+                } else if (waveNum === 2) {
+                    pushGroup('grunt', 6, 1.0);
+                    pushGroup('scout', 4, 0.7);
+                } else if (waveNum === 3) {
+                    pushGroup('scout', 8, 0.65);
+                    pushGroup('tank', 2, 1.6);
+                } else if (waveNum === 4) {
+                    pushGroup('swarm', 14, 0.38);
+                    pushGroup('healer', 3, 1.2);
+                } else if (waveNum % 5 === 0) {
+                    // Boss Wave (5, 10, 15)
+                    pushGroup('scout', 6, 0.6);
+                    pushGroup('tank', Math.floor(waveNum / 2), 1.4);
+                    pushGroup('healer', 3, 1.1);
+                    pushGroup('boss', waveNum === 15 ? 2 : 1, 2.5);
+                } else {
+                    pushGroup('grunt', 6 + waveNum, 0.75);
+                    pushGroup('swarm', 8 + waveNum, 0.35);
+                    pushGroup('tank', Math.floor(waveNum / 2.5), 1.35);
+                    if (waveNum >= 6) pushGroup('healer', Math.floor(waveNum / 3), 1.1);
+                }
+
+                return queue;
+            }
+
+            UpdateThreatIntel(nextWaveNum) {
+                const container = document.getElementById('threatIntelIcons');
+                if (nextWaveNum > this.maxWaves) {
+                    container.innerHTML = `<span class="text-emerald-400">ALL WAVES COMPLETE</span>`;
+                    return;
+                }
+                const preview = this.BuildWaveDefinition(nextWaveNum);
+                const counts = {};
+                preview.forEach(item => counts[item.typeKey] = (counts[item.typeKey] || 0) + 1);
+
+                container.innerHTML = Object.entries(counts).map(([k, count]) => {
+                    const spec = ENEMY_TYPES[k];
+                    return `<span class="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 flex items-center gap-1" style="color:${spec.color}">
+                        <span class="w-2 h-2 rounded-full" style="background:${spec.color}"></span>
+                        ${spec.name}: ${count}
+                    </span>`;
+                }).join('');
+            }
+
+            TriggerNextWave() {
+                if (this.gameOver) return;
+                if (this.wave >= this.maxWaves && this.enemies.length === 0 && this.spawnQueue.length === 0) return;
+
+                // Early wave call bonus if current wave is still active
+                if (this.waveActive && this.wave < this.maxWaves) {
+                    const bonus = 25;
+                    this.gold += bonus;
+                    this.score += 50;
+                    this.AddFloatingText(this.canvas.width / 2, 60, `EARLY LAUNCH BONUS +${bonus}c`, '#00ff88');
+                }
+
+                if (this.wave < this.maxWaves) {
+                    this.wave++;
+                    const newEnemies = this.BuildWaveDefinition(this.wave);
+                    this.spawnQueue.push(...newEnemies);
+                    this.waveActive = true;
+
+                    // Show Banner
+                    const banner = document.getElementById('waveBanner');
+                    const bannerText = document.getElementById('waveBannerText');
+                    bannerText.textContent = this.wave % 5 === 0 ? `WARNING // BOSS WAVE ${this.wave} INCOMING` : `WAVE ${this.wave} DEPLOYING`;
+                    banner.classList.remove('opacity-0', '-translate-y-4');
+                    setTimeout(() => banner.classList.add('opacity-0', '-translate-y-4'), 2600);
+
+                    sound.Play('build');
+                    this.UpdateHUD();
+                    this.UpdateThreatIntel(this.wave + 1);
+                }
+            }
+
+            ActivateAbility(key) {
+                const ab = this.abilities[key];
+                if (ab.timer > 0 || this.gold < ab.cost) return;
+
+                if (key === 'orbital') {
+                    if (this.enemies.length === 0) return;
+                    this.gold -= ab.cost;
+                    ab.timer = ab.cooldown;
+                    sound.Play('orbital');
+
+                    // Deal massive damage to all active enemies
+                    const dmg = 160 + this.wave * 35;
+                    this.enemies.forEach(e => {
+                        e.hp -= dmg;
+                        this.SpawnParticles(e.x, e.y, '#f43f5e', 18);
+                        this.AddFloatingText(e.x, e.y - 12, `-${dmg} ORBITAL`, '#f43f5e');
+                    });
+
+                    this.shockwaves.push({
+                        x: this.canvas.width / 2,
+                        y: this.canvas.height / 2,
+                        r: 10,
+                        maxR: Math.max(this.canvas.width, this.canvas.height),
+                        color: '#f43f5e',
+                        alpha: 0.9
+                    });
+                } else if (key === 'overclock') {
+                    if (this.towers.length === 0) return;
+                    this.gold -= ab.cost;
+                    ab.timer = ab.cooldown;
+                    ab.activeTimer = 8.0; // 8 seconds of +60% attack speed
+                    sound.Play('upgrade');
+                    this.towers.forEach(t => {
+                        const pos = this.CellCenter(t.c, t.r);
+                        this.SpawnParticles(pos.x, pos.y, '#00f3ff', 12);
+                    });
+                    this.AddFloatingText(this.canvas.width / 2, this.canvas.height / 2, "TURRETS OVERCLOCKED (+60% SPD)!", "#00f3ff");
+                }
+
+                this.UpdateHUD();
+            }
+
+            SpawnEnemy(item) {
+                const spec = ENEMY_TYPES[item.typeKey];
+                const startCell = this.pathCells[0];
+                const pos = this.CellCenter(startCell.c, startCell.r);
+                const maxHp = Math.round(spec.hp * item.scale);
+
+                this.enemies.push({
+                    typeKey: item.typeKey,
+                    spec: spec,
+                    x: pos.x,
+                    y: pos.y,
+                    hp: maxHp,
+                    maxHp: maxHp,
+                    speed: spec.speed,
+                    pathIndex: 0,
+                    distanceTraveled: 0,
+                    slowTimer: 0,
+                    slowFactor: 0,
+                    healTimer: 2.0,
+                    reward: Math.round(spec.reward * (1 + (this.wave - 1) * 0.06)),
+                    score: spec.score
+                });
+            }
+
+            /**
+             * ============================================================================
+             * UPDATE TICK (PHYSICS, TARGETING, PROJECTILES, ENEMIES)
+             * ============================================================================
+             */
+            Update(dt) {
+                if (this.gameOver || this.speed === 0) return;
+                const simDt = dt * this.speed;
+
+                // Update Abilities Cooldowns
+                ['orbital', 'overclock'].forEach(k => {
+                    const ab = this.abilities[k];
+                    if (ab.timer > 0) ab.timer = Math.max(0, ab.timer - simDt);
+                });
+                if (this.abilities.overclock.activeTimer > 0) {
+                    this.abilities.overclock.activeTimer = Math.max(0, this.abilities.overclock.activeTimer - simDt);
+                }
+                this.UpdateAbilityButtons();
+
+                // Process Spawn Queue
+                if (this.spawnQueue.length > 0) {
+                    this.spawnTimer -= simDt;
+                    if (this.spawnTimer <= 0) {
+                        const next = this.spawnQueue.shift();
+                        this.SpawnEnemy(next);
+                        this.spawnTimer = next.delay;
+                    }
+                } else if (this.waveActive && this.enemies.length === 0) {
+                    // Wave Complete!
+                    this.waveActive = false;
+                    const interest = Math.min(75, Math.floor(this.gold * 0.05));
+                    const waveBonus = 40 + this.wave * 10 + interest;
+                    this.gold += waveBonus;
+                    this.score += 150 + this.wave * 25;
+
+                    this.AddFloatingText(this.canvas.width / 2, this.canvas.height / 2, `WAVE ${this.wave} CLEARED! +${waveBonus}c`, '#00ff88');
+                    sound.Play('upgrade');
+                    this.UpdateHUD();
+
+                    if (this.wave >= this.maxWaves) {
+                        this.TriggerEndGame(true);
+                        return;
+                    }
+                }
+
+                // Update Enemies
+                for (let i = this.enemies.length - 1; i >= 0; i--) {
+                    const e = this.enemies[i];
+
+                    if (e.hp <= 0) {
+                        this.HandleEnemyDeath(e);
+                        this.enemies.splice(i, 1);
+                        continue;
+                    }
+
+                    // Slow status
+                    if (e.slowTimer > 0) {
+                        e.slowTimer -= simDt;
+                        if (e.slowTimer <= 0) e.slowFactor = 0;
+                    }
+
+                    // Healer pulse
+                    if (e.spec.heals) {
+                        e.healTimer -= simDt;
+                        if (e.healTimer <= 0) {
+                            e.healTimer = 2.4;
+                            this.shockwaves.push({ x: e.x, y: e.y, r: 4, maxR: this.cellSize * 1.6, color: '#2dd4bf', alpha: 0.7 });
+                            this.enemies.forEach(ally => {
+                                const dist = Math.hypot(ally.x - e.x, ally.y - e.y);
+                                if (dist <= this.cellSize * 1.6 && ally.hp < ally.maxHp) {
+                                    ally.hp = Math.min(ally.maxHp, ally.hp + Math.round(ally.maxHp * 0.1));
+                                }
+                            });
+                        }
+                    }
+
+                    // Move along path cells
+                    const currentSpeedPx = e.speed * (1 - e.slowFactor) * this.cellSize * simDt;
+                    e.distanceTraveled += currentSpeedPx;
+
+                    const nextIdx = e.pathIndex + 1;
+                    if (nextIdx >= this.pathCells.length) {
+                        // Breached Core!
+                        this.health = Math.max(0, this.health - (e.spec.boss ? 5 : 1));
+                        this.SpawnParticles(e.x, e.y, '#f43f5e', 24);
+                        this.AddFloatingText(e.x, e.y, e.spec.boss ? "-5 CORE HP!" : "-1 CORE HP!", "#f43f5e");
+                        sound.Play('hit');
+                        this.enemies.splice(i, 1);
+                        this.UpdateHUD();
+
+                        if (this.health <= 0) {
+                            this.TriggerEndGame(false);
+                            return;
+                        }
+                        continue;
+                    }
+
+                    const targetCell = this.pathCells[nextIdx];
+                    const targetPos = this.CellCenter(targetCell.c, targetCell.r);
+                    const dx = targetPos.x - e.x;
+                    const dy = targetPos.y - e.y;
+                    const dist = Math.hypot(dx, dy);
+
+                    if (dist <= currentSpeedPx) {
+                        e.x = targetPos.x;
+                        e.y = targetPos.y;
+                        e.pathIndex = nextIdx;
+                    } else {
+                        e.x += (dx / dist) * currentSpeedPx;
+                        e.y += (dy / dist) * currentSpeedPx;
+                    }
+                }
+
+                // Update Towers
+                const overclockMult = this.abilities.overclock.activeTimer > 0 ? 1.6 : 1.0;
+
+                this.towers.forEach(t => {
+                    if (t.cooldown > 0) t.cooldown -= simDt * overclockMult;
+                    if (t.pulseAnim > 0) t.pulseAnim = Math.max(0, t.pulseAnim - simDt * 3);
+
+                    const pos = this.CellCenter(t.c, t.r);
+                    const rangePx = t.range * this.cellSize;
+
+                    // Find candidates in range
+                    const inRange = this.enemies.filter(e => Math.hypot(e.x - pos.x, e.y - pos.y) <= rangePx);
+                    if (inRange.length === 0) return;
+
+                    // Sort by targeting protocol
+                    let target = inRange[0];
+                    if (t.targeting === 'first') {
+                        inRange.sort((a, b) => b.distanceTraveled - a.distanceTraveled);
+                    } else if (t.targeting === 'strongest') {
+                        inRange.sort((a, b) => b.hp - a.hp);
+                    } else if (t.targeting === 'weakest') {
+                        inRange.sort((a, b) => a.hp - b.hp);
+                    } else if (t.targeting === 'closest') {
+                        inRange.sort((a, b) => Math.hypot(a.x - pos.x, a.y - pos.y) - Math.hypot(b.x - pos.x, b.y - pos.y));
+                    }
+                    target = inRange[0];
+
+                    // Rotate turret barrel toward target
+                    t.angle = Math.atan2(target.y - pos.y, target.x - pos.x);
+
+                    if (t.cooldown <= 0) {
+                        t.cooldown = 1 / t.fireRate;
+                        t.pulseAnim = 1;
+                        this.FireTower(t, pos, target, inRange, rangePx);
+                    }
+                });
+
+                // Update Projectiles
+                for (let i = this.projectiles.length - 1; i >= 0; i--) {
+                    const p = this.projectiles[i];
+                    const dx = p.targetX - p.x;
+                    const dy = p.targetY - p.y;
+                    const dist = Math.hypot(dx, dy);
+                    const step = p.speed * this.cellSize * simDt;
+
+                    // Update homing coordinates if target is still alive
+                    if (p.target && p.target.hp > 0) {
+                        p.targetX = p.target.x;
+                        p.targetY = p.target.y;
+                    }
+
+                    if (dist <= step) {
+                        this.ImpactProjectile(p);
+                        this.projectiles.splice(i, 1);
+                    } else {
+                        p.x += (dx / dist) * step;
+                        p.y += (dy / dist) * step;
+                    }
+                }
+
+                // Update Visual Beams, Shockwaves, Particles & Floating Texts
+                for (let i = this.laserBeams.length - 1; i >= 0; i--) {
+                    this.laserBeams[i].life -= simDt;
+                    if (this.laserBeams[i].life <= 0) this.laserBeams.splice(i, 1);
+                }
+
+                for (let i = this.shockwaves.length - 1; i >= 0; i--) {
+                    const sw = this.shockwaves[i];
+                    sw.r += (sw.maxR - sw.r) * 8 * simDt;
+                    sw.alpha -= 2.2 * simDt;
+                    if (sw.alpha <= 0.02) this.shockwaves.splice(i, 1);
+                }
+
+                for (let i = this.particles.length - 1; i >= 0; i--) {
+                    const pt = this.particles[i];
+                    pt.x += pt.vx * simDt;
+                    pt.y += pt.vy * simDt;
+                    pt.life -= simDt;
+                    if (pt.life <= 0) this.particles.splice(i, 1);
+                }
+
+                for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
+                    const ft = this.floatingTexts[i];
+                    ft.y -= 28 * simDt;
+                    ft.life -= simDt;
+                    if (ft.life <= 0) this.floatingTexts.splice(i, 1);
+                }
+            }
+
+            FireTower(t, pos, target, inRange, rangePx) {
+                sound.Play(t.spec.sound);
+
+                if (t.type === 'laser') {
+                    // Instant hit beam
+                    this.ApplyDamage(target, t.damage, t, false);
+                    this.laserBeams.push({
+                        x1: pos.x, y1: pos.y,
+                        x2: target.x, y2: target.y,
+                        color: t.spec.color,
+                        width: t.level + 1.5,
+                        life: 0.12
+                    });
+                    this.SpawnParticles(target.x, target.y, t.spec.color, 4);
+                } else if (t.type === 'frost') {
+                    // AoE Cryo Nova around tower
+                    this.shockwaves.push({
+                        x: pos.x, y: pos.y,
+                        r: 8, maxR: rangePx,
+                        color: t.spec.color,
+                        alpha: 0.75
+                    });
+                    inRange.forEach(e => {
+                        this.ApplyDamage(e, t.damage, t, false);
+                        e.slowFactor = Math.max(e.slowFactor, t.spec.slowFactor + (t.level - 1) * 0.08);
+                        e.slowTimer = t.spec.slowDuration;
+                    });
+                } else if (t.type === 'sniper') {
+                    // Instant railgun pierce
+                    this.ApplyDamage(target, t.damage, t, true);
+                    this.laserBeams.push({
+                        x1: pos.x, y1: pos.y,
+                        x2: target.x, y2: target.y,
+                        color: '#c084fc',
+                        width: 3.5,
+                        life: 0.22
+                    });
+                    this.SpawnParticles(target.x, target.y, '#c084fc', 10);
+                } else if (t.type === 'cannon') {
+                    // Travel plasma shell
+                    this.projectiles.push({
+                        x: pos.x,
+                        y: pos.y,
+                        target: target,
+                        targetX: target.x,
+                        targetY: target.y,
+                        speed: 7.5,
+                        damage: t.damage,
+                        splashRadius: t.spec.splashRadius * this.cellSize,
+                        color: t.spec.color,
+                        tower: t
+                    });
+                }
+            }
+
+            ImpactProjectile(p) {
+                this.shockwaves.push({
+                    x: p.targetX,
+                    y: p.targetY,
+                    r: 4,
+                    maxR: p.splashRadius,
+                    color: p.color,
+                    alpha: 0.85
+                });
+                this.SpawnParticles(p.targetX, p.targetY, p.color, 14);
+
+                this.enemies.forEach(e => {
+                    const d = Math.hypot(e.x - p.targetX, e.y - p.targetY);
+                    if (d <= p.splashRadius) {
+                        const falloff = 1 - (d / p.splashRadius) * 0.35;
+                        this.ApplyDamage(e, Math.round(p.damage * falloff), p.tower, false);
+                    }
+                });
+            }
+
+            ApplyDamage(enemy, rawDmg, tower, ignoreArmor) {
+                const armor = ignoreArmor ? 0 : (enemy.spec.armor || 0);
+                const actualDmg = Math.max(1, Math.round(rawDmg * (1 - armor)));
+                enemy.hp -= actualDmg;
+
+                if (tower) {
+                    tower.damageDealt += actualDmg;
+                    if (enemy.hp <= 0 && !enemy.countedDead) {
+                        enemy.countedDead = true;
+                        tower.kills++;
+                    }
+                    if (this.selectedTower === tower) {
+                        document.getElementById('inspTotalKills').textContent = `Eliminations: ${tower.kills} // Damage: ${Math.round(tower.damageDealt).toLocaleString()}`;
+                    }
+                }
+            }
+
+            HandleEnemyDeath(e) {
+                this.gold += e.reward;
+                this.score += e.score;
+                this.totalKills++;
+
+                this.SpawnParticles(e.x, e.y, e.spec.color, 15);
+                this.AddFloatingText(e.x, e.y, `+${e.reward}c`, '#ffae00');
+                this.UpdateHUD();
+                if (this.selectedTower) this.UpdateInspectorUI();
+            }
+
+            SpawnParticles(x, y, color, count) {
+                for (let i = 0; i < count; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const spd = 25 + Math.random() * 95;
+                    this.particles.push({
+                        x, y,
+                        vx: Math.cos(angle) * spd,
+                        vy: Math.sin(angle) * spd,
+                        color,
+                        life: 0.25 + Math.random() * 0.35,
+                        size: 2 + Math.random() * 2.5
+                    });
+                }
+            }
+
+            AddFloatingText(x, y, text, color) {
+                this.floatingTexts.push({ x, y, text, color, life: 0.95 });
+            }
+
+            UpdateHUD() {
+                document.getElementById('uiHealth').textContent = this.health;
+                document.getElementById('uiGold').textContent = this.gold;
+                document.getElementById('uiWave').textContent = Math.max(1, this.wave);
+                document.getElementById('uiScore').textContent = this.score.toLocaleString();
+
+                const btnWaveText = document.getElementById('btnWaveText');
+                if (this.wave === 0) btnWaveText.textContent = "START WAVE 1";
+                else if (this.waveActive && this.wave < this.maxWaves) btnWaveText.textContent = `CALL WAVE ${this.wave + 1} (+25c)`;
+                else if (this.wave < this.maxWaves) btnWaveText.textContent = `SEND WAVE ${this.wave + 1}`;
+                else btnWaveText.textContent = "FINAL WAVE";
+            }
+
+            UpdateAbilityButtons() {
+                const orb = this.abilities.orbital;
+                const cdOrb = document.getElementById('cdOrbital');
+                const btnOrb = document.getElementById('abilityOrbital');
+                if (orb.timer > 0) {
+                    cdOrb.textContent = `RECHARGING (${orb.timer.toFixed(1)}s)`;
+                    cdOrb.className = "text-[10px] text-rose-400 font-semibold";
+                    btnOrb.disabled = true;
+                } else {
+                    cdOrb.textContent = "READY // GLOBAL AoE";
+                    cdOrb.className = "text-[10px] text-emerald-400 font-semibold";
+                    btnOrb.disabled = this.gold < orb.cost;
+                }
+
+                const ovc = this.abilities.overclock;
+                const cdOvc = document.getElementById('cdOverclock');
+                const btnOvc = document.getElementById('abilityOverclock');
+                if (ovc.activeTimer > 0) {
+                    cdOvc.textContent = `ACTIVE (${ovc.activeTimer.toFixed(1)}s)`;
+                    cdOvc.className = "text-[10px] text-cyan-300 font-semibold animate-pulse";
+                    btnOvc.disabled = true;
+                } else if (ovc.timer > 0) {
+                    cdOvc.textContent = `COOLDOWN (${ovc.timer.toFixed(1)}s)`;
+                    cdOvc.className = "text-[10px] text-rose-400 font-semibold";
+                    btnOvc.disabled = true;
+                } else {
+                    cdOvc.textContent = "READY // +60% FIRE RATE";
+                    cdOvc.className = "text-[10px] text-emerald-400 font-semibold";
+                    btnOvc.disabled = this.gold < ovc.cost;
+                }
+            }
+
+            /**
+             * ============================================================================
+             * RENDERING ENGINE (NEON SCI-FI VECTOR GRAPHICS)
+             * ============================================================================
+             */
+            Draw() {
+                const ctx = this.ctx;
+                ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // 1. Draw Tactical Grid Cells
+                for (let r = 0; r < GRID_ROWS; r++) {
+                    for (let c = 0; c < GRID_COLS; c++) {
+                        const x = this.offsetX + c * this.cellSize;
+                        const y = this.offsetY + r * this.cellSize;
+                        const cellType = this.grid[r][c];
+
+                        if (cellType === 1) {
+                            // Path Corridor
+                            ctx.fillStyle = 'rgba(15, 23, 42, 0.95)';
+                            ctx.fillRect(x, y, this.cellSize, this.cellSize);
+                            ctx.strokeStyle = 'rgba(0, 243, 255, 0.12)';
+                            ctx.strokeRect(x, y, this.cellSize, this.cellSize);
+                        } else {
+                            // Buildable Node
+                            ctx.fillStyle = 'rgba(7, 12, 24, 0.85)';
+                            ctx.fillRect(x + 1, y + 1, this.cellSize - 2, this.cellSize - 2);
+                            ctx.strokeStyle = 'rgba(30, 41, 59, 0.65)';
+                            ctx.lineWidth = 1;
+                            ctx.strokeRect(x + 1, y + 1, this.cellSize - 2, this.cellSize - 2);
+
+                            // Subtle center node dot
+                            ctx.fillStyle = 'rgba(0, 243, 255, 0.12)';
+                            ctx.beginPath();
+                            ctx.arc(x + this.cellSize / 2, y + this.cellSize / 2, 2, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                }
+
+                // 2. Draw Glowing Neon Path Flow Line
+                if (this.pathCells.length > 1) {
+                    ctx.save();
+                    ctx.beginPath();
+                    const first = this.CellCenter(this.pathCells[0].c, this.pathCells[0].r);
+                    ctx.moveTo(first.x, first.y);
+                    for (let i = 1; i < this.pathCells.length; i++) {
+                        const pt = this.CellCenter(this.pathCells[i].c, this.pathCells[i].r);
+                        ctx.lineTo(pt.x, pt.y);
+                    }
+                    ctx.strokeStyle = 'rgba(0, 243, 255, 0.22)';
+                    ctx.lineWidth = 4;
+                    ctx.stroke();
+
+                    // Animated energy pulses along path
+                    ctx.setLineDash([10, 22]);
+                    ctx.lineDashOffset = -(performance.now() * 0.04);
+                    ctx.strokeStyle = 'rgba(0, 243, 255, 0.65)';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    ctx.restore();
+
+                    // Spawn Portal & Core Objective Markers
+                    const end = this.CellCenter(this.pathCells[this.pathCells.length - 1].c, this.pathCells[this.pathCells.length - 1].r);
+                    this.DrawPortal(first.x, first.y, '#f43f5e', 'SPAWN');
+                    this.DrawPortal(end.x, end.y, '#00f3ff', 'CORE');
+                }
+
+                // 3. Draw Hover Placement Preview / Selected Tower Range Circle
+                if (this.hoverCell.c >= 0 && this.selectedBuildType) {
+                    const hc = this.hoverCell.c;
+                    const hr = this.hoverCell.r;
+                    const canBuild = this.grid[hr][hc] === 0;
+                    const spec = TOWER_SPECS[this.selectedBuildType];
+                    const pos = this.CellCenter(hc, hr);
+
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(pos.x, pos.y, spec.range * this.cellSize, 0, Math.PI * 2);
+                    ctx.fillStyle = canBuild ? 'rgba(0, 243, 255, 0.09)' : 'rgba(244, 63, 94, 0.12)';
+                    ctx.fill();
+                    ctx.strokeStyle = canBuild ? spec.color : '#f43f5e';
+                    ctx.lineWidth = 1.5;
+                    ctx.setLineDash([6, 6]);
+                    ctx.stroke();
+
+                    // Highlight cell box
+                    ctx.setLineDash([]);
+                    ctx.strokeRect(
+                        this.offsetX + hc * this.cellSize + 2,
+                        this.offsetY + hr * this.cellSize + 2,
+                        this.cellSize - 4,
+                        this.cellSize - 4
+                    );
+                    ctx.restore();
+                }
+
+                if (this.selectedTower) {
+                    const pos = this.CellCenter(this.selectedTower.c, this.selectedTower.r);
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(pos.x, pos.y, this.selectedTower.range * this.cellSize, 0, Math.PI * 2);
+                    ctx.fillStyle = `${this.selectedTower.spec.color}15`;
+                    ctx.fill();
+                    ctx.strokeStyle = this.selectedTower.spec.color;
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                // 4. Draw Placed Towers
+                this.towers.forEach(t => this.DrawTower(t));
+
+                // 5. Draw Enemies
+                this.enemies.forEach(e => this.DrawEnemy(e));
+
+                // 6. Draw Projectiles & Beams
+                this.projectiles.forEach(p => {
+                    ctx.save();
+                    ctx.fillStyle = p.color;
+                    ctx.shadowColor = p.color;
+                    ctx.shadowBlur = 10;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                });
+
+                this.laserBeams.forEach(b => {
+                    ctx.save();
+                    ctx.strokeStyle = b.color;
+                    ctx.shadowColor = b.color;
+                    ctx.shadowBlur = 12;
+                    ctx.lineWidth = b.width;
+                    ctx.beginPath();
+                    ctx.moveTo(b.x1, b.y1);
+                    ctx.lineTo(b.x2, b.y2);
+                    ctx.stroke();
+                    ctx.restore();
+                });
+
+                // 7. Draw Shockwaves & Particles
+                this.shockwaves.forEach(sw => {
+                    ctx.save();
+                    ctx.strokeStyle = sw.color;
+                    ctx.globalAlpha = Math.max(0, sw.alpha);
+                    ctx.lineWidth = 2.5;
+                    ctx.beginPath();
+                    ctx.arc(sw.x, sw.y, sw.r, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.restore();
+                });
+
+                this.particles.forEach(pt => {
+                    ctx.save();
+                    ctx.fillStyle = pt.color;
+                    ctx.globalAlpha = Math.max(0, pt.life * 2);
+                    ctx.beginPath();
+                    ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                });
+
+                // 8. Draw Floating Damage / Credit Texts
+                this.floatingTexts.forEach(ft => {
+                    ctx.save();
+                    ctx.font = "bold 12px 'Orbitron', sans-serif";
+                    ctx.fillStyle = ft.color;
+                    ctx.globalAlpha = Math.min(1, ft.life * 1.5);
+                    ctx.textAlign = 'center';
+                    ctx.fillText(ft.text, ft.x, ft.y);
+                    ctx.restore();
+                });
+            }
+
+            DrawPortal(x, y, color, label) {
+                const ctx = this.ctx;
+                const r = this.cellSize * 0.36;
+                ctx.save();
+                ctx.strokeStyle = color;
+                ctx.fillStyle = `${color}22`;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.font = "bold 9px 'Orbitron', sans-serif";
+                ctx.fillStyle = '#ffffff';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(label, x, y);
+                ctx.restore();
+            }
+
+            DrawTower(t) {
+                const ctx = this.ctx;
+                const pos = this.CellCenter(t.c, t.r);
+                const r = this.cellSize * 0.36;
+
+                ctx.save();
+                ctx.translate(pos.x, pos.y);
+
+                // Overclock ring aura
+                if (this.abilities.overclock.activeTimer > 0) {
+                    ctx.strokeStyle = '#00f3ff';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, r * 1.22, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+
+                // Base Platform
+                ctx.fillStyle = '#0f172a';
+                ctx.strokeStyle = t.spec.color;
+                ctx.lineWidth = t.selectedTower === t ? 2.5 : 1.8;
+                ctx.beginPath();
+                ctx.arc(0, 0, r, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                // Level pips
+                for (let i = 0; i < t.level; i++) {
+                    ctx.fillStyle = t.spec.color;
+                    ctx.beginPath();
+                    ctx.arc(-6 + i * 6, r - 4, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Rotating Turret Head
+                ctx.rotate(t.angle);
+                ctx.fillStyle = t.spec.color;
+
+                if (t.type === 'laser') {
+                    ctx.fillRect(0, -3, r * 0.95, 6);
+                } else if (t.type === 'cannon') {
+                    ctx.fillRect(-4, -6, r * 0.9, 12);
+                } else if (t.type === 'sniper') {
+                    ctx.fillRect(0, -2, r * 1.25, 4);
+                }
+
+                // Core Center
+                ctx.beginPath();
+                ctx.arc(0, 0, r * 0.42, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+
+            DrawEnemy(e) {
+                const ctx = this.ctx;
+                const r = e.spec.radius * this.cellSize;
+
+                ctx.save();
+                ctx.translate(e.x, e.y);
+
+                // Chilled / Slowed ring
+                if (e.slowTimer > 0) {
+                    ctx.strokeStyle = '#38bdf8';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, r + 4, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+
+                ctx.fillStyle = '#090d16';
+                ctx.strokeStyle = e.spec.color;
+                ctx.lineWidth = 2.2;
+                ctx.shadowColor = e.spec.color;
+                ctx.shadowBlur = 8;
+
+                ctx.beginPath();
+                if (e.spec.shape === 'triangle') {
+                    for (let i = 0; i < 3; i++) {
+                        const a = (i * Math.PI * 2) / 3;
+                        const px = Math.cos(a) * r;
+                        const py = Math.sin(a) * r;
+                        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+                    }
+                    ctx.closePath();
+                } else if (e.spec.shape === 'diamond') {
+                    ctx.moveTo(0, -r);
+                    ctx.lineTo(r, 0);
+                    ctx.lineTo(0, r);
+                    ctx.lineTo(-r, 0);
+                    ctx.closePath();
+                } else if (e.spec.shape === 'hexagon' || e.spec.shape === 'octagon') {
+                    const sides = e.spec.shape === 'hexagon' ? 6 : 8;
+                    for (let i = 0; i < sides; i++) {
+                        const a = (i * Math.PI * 2) / sides;
+                        const px = Math.cos(a) * r;
+                        const py = Math.sin(a) * r;
+                        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+                    }
+                    ctx.closePath();
+                } else {
+                    ctx.arc(0, 0, r, 0, Math.PI * 2);
+                }
+
+                ctx.fill();
+                ctx.stroke();
+
+                // Inner Core
+                ctx.fillStyle = e.spec.color;
+                ctx.beginPath();
+                ctx.arc(0, 0, r * 0.4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+
+                // Health Bar
+                const bw = this.cellSize * 0.56;
+                const bh = 4;
+                const bx = e.x - bw / 2;
+                const by = e.y - r - 9;
+                const hpRatio = Math.max(0, e.hp / e.maxHp);
+
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+                ctx.fillRect(bx, by, bw, bh);
+                ctx.fillStyle = hpRatio > 0.5 ? '#00ff88' : hpRatio > 0.25 ? '#ffae00' : '#f43f5e';
+                ctx.fillRect(bx, by, bw * hpRatio, bh);
+            }
+
+            Loop(now) {
+                const dt = Math.min(0.1, (now - this.lastTime) / 1000);
+                this.lastTime = now;
+
+                this.Update(dt);
+                this.Draw();
+
+                requestAnimationFrame((t) => this.Loop(t));
+            }
+        }
+
+        // Initialize Game on Window Load
+        let game;
+        window.onload = () => {
+            game = new TowerDefenseGame();
+        };
+    </script>
+</body>
+</html>
